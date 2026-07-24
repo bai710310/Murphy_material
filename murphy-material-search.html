@@ -2,12 +2,16 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#FBF6EE">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Murphy 教材搜尋台</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-  :root{
+  :root{ color-scheme: light;
     --cream:#FBF6EE; --ink:#4A3B32; --ink-soft:#8A7B6E;
     --sage:#6B8E76; --sage-soft:#C6DACB; --line:#E9DFCF; --card:#FFFFFF;
   }
@@ -362,14 +366,32 @@ let editingChips = {cats:new Set()};
 let interests = [];
 const STORE_KEY_INTERESTS = "interests_v1";
 
+// 通用儲存層：Claude 環境用 window.storage，一般瀏覽器（GitHub Pages/Safari）用 localStorage
+const store = {
+  async get(key){
+    if(window.storage && window.storage.get){
+      try{ return await window.storage.get(key, false); }catch(e){ return null; }
+    }
+    const v = localStorage.getItem(key);
+    return v === null ? null : {key, value: v};
+  },
+  async set(key, value){
+    if(window.storage && window.storage.set){
+      try{ return await window.storage.set(key, value, false); }catch(e){ /* fallthrough */ }
+    }
+    localStorage.setItem(key, value);
+    return {key, value};
+  }
+};
+
 async function loadInterests(){
   try{
-    const res = await window.storage.get(STORE_KEY_INTERESTS, false);
+    const res = await store.get(STORE_KEY_INTERESTS);
     interests = res && res.value ? JSON.parse(res.value) : [];
   }catch(e){ interests = []; }
 }
 async function saveInterests(){
-  try{ await window.storage.set(STORE_KEY_INTERESTS, JSON.stringify(interests), false); }
+  try{ await store.set(STORE_KEY_INTERESTS, JSON.stringify(interests)); }
   catch(e){ showToast("儲存失敗"); }
 }
 function interestScore(m){
@@ -393,7 +415,7 @@ async function saveInterestsFromModal(){
 
 async function loadData(){
   try{
-    const res = await window.storage.get(STORE_KEY_MATERIALS, false);
+    const res = await store.get(STORE_KEY_MATERIALS);
     if(res && res.value){
       materials = JSON.parse(res.value);
       // Merge in any new default entries that aren't already present (by title),
@@ -416,7 +438,7 @@ async function loadData(){
   renderLanding();
 }
 async function saveMaterials(){
-  try{ await window.storage.set(STORE_KEY_MATERIALS, JSON.stringify(materials), false); }
+  try{ await store.set(STORE_KEY_MATERIALS, JSON.stringify(materials)); }
   catch(e){ showToast("儲存失敗，請再試一次"); }
 }
 function showToast(msg){
