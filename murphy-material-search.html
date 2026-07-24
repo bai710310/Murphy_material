@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Murphy 教材搜尋台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF6EE; --ink:#4A3B32; --ink-soft:#8A7B6E;
+    --sage:#6B8E76; --sage-soft:#C6DACB; --line:#E9DFCF; --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--cream);color:var(--ink);font-family:'Noto Sans TC',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:640px;margin:0 auto;padding:32px 16px 90px;}
+  .brand{text-align:center;font-family:'Fredoka',sans-serif;font-weight:600;font-size:14px;letter-spacing:1.5px;color:var(--sage);text-transform:lowercase;margin-bottom:4px;}
+  h1{font-family:'Fredoka',sans-serif;font-weight:600;font-size:24px;text-align:center;margin:0 0 8px;}
+  .sub{text-align:center;color:var(--ink-soft);font-size:13px;margin-bottom:24px;}
+
+  .search-box{position:relative;margin:0 auto 22px;}
+  .search-box input{width:100%;padding:15px 46px 15px 18px;font-size:16px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);font-family:'Noto Sans TC',sans-serif;outline:none;transition:.2s;}
+  .search-box input:focus{border-color:var(--sage);box-shadow:0 0 0 4px var(--sage-soft);}
+  .search-box .icon{position:absolute;right:17px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--ink-soft);pointer-events:none;}
+
+  .toolbar{display:flex;justify-content:center;gap:10px;margin-bottom:22px;flex-wrap:wrap;}
+  .btn{font-family:'Noto Sans TC',sans-serif;font-weight:500;font-size:13px;padding:8px 16px;border-radius:10px;border:none;cursor:pointer;}
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:var(--sage);color:#fff;}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line);}
+
+  .landing{text-align:center;padding:40px 20px 20px;color:var(--ink-soft);}
+  .landing .big{font-size:38px;margin-bottom:10px;}
+  .landing p{font-size:13px;line-height:1.7;max-width:320px;margin:0 auto;}
+
+  .sr-item{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:9px;}
+  .sr-title{font-weight:700;font-size:14.5px;}
+  .sr-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+  .badge{font-size:10.5px;padding:2px 9px;border-radius:999px;background:var(--sage-soft);color:var(--sage);}
+  .sr-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
+  .tag-pill{font-size:10px;color:var(--ink-soft);border:1px solid var(--line);padding:2px 8px;border-radius:999px;}
+  .sr-note{font-size:12px;color:var(--ink-soft);margin-top:6px;line-height:1.5;}
+  .no-results{text-align:center;color:var(--ink-soft);font-size:13px;padding:30px 0;}
+
+  .modal-bg{position:fixed;inset:0;background:rgba(74,59,50,.4);display:none;align-items:flex-end;justify-content:center;z-index:50;}
+  .modal-bg.open{display:flex;}
+  .modal{background:var(--cream);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:20px 18px 24px;max-height:88vh;overflow-y:auto;}
+  @media (min-width:600px){.modal-bg{align-items:center;} .modal{border-radius:20px;margin-bottom:40px;}}
+  .modal h2{font-family:'Fredoka',sans-serif;font-size:18px;margin:0 0 14px;}
+  .field{margin-bottom:13px;}
+  .field label{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:5px;}
+  .field input[type=text],.field textarea{width:100%;padding:9px 11px;border-radius:10px;border:1px solid var(--line);font-family:'Noto Sans TC',sans-serif;font-size:13.5px;background:#fff;color:var(--ink);resize:vertical;}
+  .chip-group{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{padding:6px 12px;border-radius:999px;border:1.5px solid var(--line);font-size:12px;cursor:pointer;background:#fff;color:var(--ink-soft);user-select:none;}
+  .chip.on{background:var(--sage);border-color:var(--sage);color:#fff;}
+  .modal-actions{display:flex;gap:10px;margin-top:18px;}
+  .modal-actions .btn{flex:1;}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:60;}
+  .toast.show{opacity:1;}
+  .manage-item{display:flex;justify-content:space-between;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;}
+  .manage-item .mi-title{font-weight:700;font-size:13px;}
+  .manage-item .mi-sub{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .manage-item button{background:none;border:none;color:#C0685C;font-size:11.5px;cursor:pointer;padding:3px 5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">fammys</div>
+  <h1>Murphy 教材搜尋台</h1>
+  <div class="sub">打她今天想玩的主題，相關教材直接撈出來</div>
+
+  <div class="search-box">
+    <input id="searchInput" type="text" placeholder="她說想玩什麼，就打什麼…" autocomplete="off">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn btn-primary" id="addBtn">＋ 新增教材</button>
+    <button class="btn btn-ghost" id="manageBtn">管理教材庫</button>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<div class="modal-bg" id="interestBg">
+  <div class="modal">
+    <h2>福福最近迷什麼？</h2>
+    <div class="field">
+      <label>用逗號分隔，最多6個（例如：狗, 餐廳, 恐龍）</label>
+      <input type="text" id="f_interests" placeholder="狗, 餐廳, 恐龍">
+      <div style="font-size:11px;color:var(--ink-soft);margin-top:6px;">符合這些的教材會自動排在搜尋結果最前面。過陣子她迷別的，回來改就好。</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('interestBg').classList.remove('open')">取消</button>
+      <button class="btn btn-primary" onclick="saveInterestsFromModal()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2 id="modalTitle">新增教材</h2>
+    <input type="hidden" id="editId">
+    <div class="field"><label>品項名稱</label><input type="text" id="f_title" placeholder="例如：Brown Bear, Brown Bear"></div>
+    <div class="field"><label>所有可能的標籤（用逗號分隔，能想到幾個打幾個 — 主題、顏色、情境、詞彙都算，例如：熊, 棕色, 動物, 花紋, 重複句型）</label>
+      <input type="text" id="f_tags" placeholder="熊, 棕色, 動物, 花紋">
+    </div>
+    <div class="field"><label>類型（可複選）</label><div class="chip-group" id="catChips"></div></div>
+    <div class="field"><label>年齡層</label><input type="text" id="f_age" placeholder="例如：3-5歲"></div>
+    <div class="field"><label>延伸玩法／備註</label><textarea id="f_note" rows="2"></textarea></div>
+    <div class="field"><label>位置／來源</label><input type="text" id="f_loc"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelBtn">取消</button>
+      <button class="btn btn-primary" id="saveBtn">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="manageBg">
+  <div class="modal">
+    <h2>管理教材庫</h2>
+    <div id="manageList"></div>
+    <div class="modal-actions"><button class="btn btn-ghost" id="closeManage">關閉</button></div>
+  </div>
+</div>
+
+<script>
+const CATS = [
+  {key:"繪本",emoji:"📚"}, {key:"Yoto",emoji:"🎧"}, {key:"桌遊",emoji:"🎲"},
+  {key:"玩具",emoji:"🧸"}, {key:"美勞",emoji:"🎨"}, {key:"英文",emoji:"🔤"},
+  {key:"數學",emoji:"➕"}, {key:"戶外",emoji:"🚶"}
+];
+const STORE_KEY_MATERIALS = "materials_v4";
+
+function cid(){return 'm'+Math.random().toString(36).slice(2,10);}
+function escapeHtml(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+
+const seed = [
+  {id:cid(),title:"小羊數學卡（排序／比較／加法）",tags:["羊","數量","排序","20分鐘","家裡","一起玩"],cats:["玩具","數學"],age:"3-5歲",note:"搭配 Numberblocks 積木做實體對應，可延伸畫「羊群排隊」美勞",loc:"家中教具箱"},
+  {id:cid(),title:"Numberblocks Farm Week 套組",tags:["動物","農場","數字","20分鐘","家裡","一起玩"],cats:["玩具","數學"],age:"3-5歲",note:"數字角色配對，可搭配羊群數學卡一起玩",loc:"家中教具箱"},
+  {id:cid(),title:"Safari Park Jr.",tags:["方向","路線規劃","動物園","下雨天","自主遊戲","20分鐘","家裡","桌遊玩法","自己玩"],cats:["桌遊"],age:"4-6歲",note:"解謎路線規劃，可搭配動物園主題繪本延伸",loc:"客廳玩具櫃"},
+  {id:cid(),title:"Day & Night 規劃板",tags:["晨昏","作息","時間","20分鐘","家裡","一起玩"],cats:["玩具"],age:"3-5歲",note:"早晚任務分類，可搭配時間相關繪本或 Yoto 床邊故事",loc:"書桌抽屜"},
+  {id:cid(),title:"【邏輯推理寶盒】夢想動物醫院",tags:["動物","醫院","獸醫","邏輯推理","20分鐘","家裡","一起玩","桌遊玩法"],cats:["桌遊"],age:"4-6歲",note:"故事情境式邏輯推理，先講故事再挑戰卡片",loc:"小康軒套組"},
+  {id:cid(),title:"【邏輯推理寶盒】阿步的蘋果店",tags:["蘋果","商店","水果","邏輯推理","野餐","準備食物","水果","出門買東西","20分鐘","家裡","一起玩","桌遊玩法"],cats:["桌遊"],age:"4-6歲",note:"故事情境式邏輯推理",loc:"小康軒套組"},
+  {id:cid(),title:"【邏輯推理寶盒】甜蜜馬卡龍",tags:["馬卡龍","甜點","烘焙","邏輯推理","野餐","準備食物","點心","20分鐘","家裡","一起玩","桌遊玩法"],cats:["桌遊"],age:"4-6歲",note:"故事情境式邏輯推理",loc:"小康軒套組"},
+  {id:cid(),title:"【邏輯推理寶盒】企鵝找泳圈",tags:["企鵝","泳圈","游泳","邏輯推理","20分鐘","家裡","一起玩","桌遊玩法"],cats:["桌遊"],age:"4-6歲",note:"故事情境式邏輯推理",loc:"小康軒套組"},
+  {id:cid(),title:"【邏輯推理寶盒】防疫特攻隊",tags:["防疫","病毒","細菌","邏輯推理","生病在家休息","20分鐘","家裡","一起玩","桌遊玩法"],cats:["桌遊"],age:"4-6歲",note:"故事情境式邏輯推理，主題跟醫院陪伴教材概念接近，可延伸",loc:"小康軒套組"},
+  {id:cid(),title:"Puppicorn (Magic Pet Shop)",tags:["狗","獨角獸","魔法寵物","星星","英文繪本","Matilda Rose","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Magic Pet Shop 系列",loc:""},
+  {id:cid(),title:"Dinocorn (Magic Pet Shop)",tags:["恐龍","獨角獸","魔法寵物","英文繪本","Matilda Rose","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Magic Pet Shop 系列",loc:""},
+  {id:cid(),title:"Elepop (Magic Pet Shop)",tags:["大象","泡泡","彩虹","魔法寵物","英文繪本","Matilda Rose","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Magic Pet Shop 系列",loc:""},
+  {id:cid(),title:"Sparkyfox (Magic Pet Shop)",tags:["狐狸","迷路","勇氣","自信","魔法寵物","英文繪本","Matilda Rose","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Magic Pet Shop 系列",loc:""},
+  {id:cid(),title:"Pugicorn and the Lovebug (Magic Pet Shop)",tags:["巴哥犬","獨角獸","友誼","魔法寵物","英文繪本","Matilda Rose","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Magic Pet Shop 系列",loc:""},
+  {id:cid(),title:"Pugicorn (Magic Pet Shop)",tags:["巴哥犬","獨角獸","公主","選寵物","魔法寵物","英文繪本","Matilda Rose","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Magic Pet Shop 系列",loc:""},
+  {id:cid(),title:"Kitticorn (Magic Pet Shop)",tags:["貓","獨角獸","規則","冒險","魔法寵物","英文繪本","Matilda Rose","My Magic Town","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"My Magic Town 延伸教材套件的原著繪本",loc:""},
+  {id:cid(),title:"Pugicorn and Hugicorn (Magic Pet Shop)",tags:["巴哥犬","訓練學校","夏天","魔法寵物","英文繪本","Matilda Rose","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Magic Pet Shop 系列",loc:""},
+  {id:cid(),title:"Starwhal (Magic Pet Shop)",tags:["獨角鯨","美人魚","星星","魔法寵物","英文繪本","Matilda Rose","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Magic Pet Shop 系列",loc:""},
+  {id:cid(),title:"La-La-Llama (Magic Pet Shop)",tags:["駱馬","才藝表演","勇氣","魔法寵物","英文繪本","Matilda Rose","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Magic Pet Shop 系列",loc:""},
+  {id:cid(),title:"Pandarina (Magic Pet Shop)",tags:["熊貓","跳舞","笨拙","生日","魔法寵物","英文繪本","Matilda Rose","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Magic Pet Shop 系列",loc:""},
+  {id:cid(),title:"Starpuff (Magic Pet Shop)",tags:["星星生物","害怕","勇氣","保護","魔法寵物","英文繪本","Matilda Rose","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Magic Pet Shop 系列",loc:""},
+  {id:cid(),title:"Pugicorn and the Christmas Wish (Magic Pet Shop)",tags:["巴哥犬","獨角獸","聖誕節","願望","魔法寵物","英文繪本","Matilda Rose","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Magic Pet Shop 系列",loc:""},
+  {id:cid(),title:"謝謝你來當我的寶貝",tags:["親情","感謝","寶貝","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"子兒，吐吐",tags:["蛇","種子","認同","李瑾倫","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"Guji-Guji",tags:["鱷魚","鴨子","認同","李瑾倫","中英雙語","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"我可以自己睡覺了（真的！）",tags:["自己睡覺","獨立","睡前","睡前儀式","家裡","一起玩","10分鐘","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"還差一點",tags:["堅持","練習","成長","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"小魚散步",tags:["魚","散步","想像力","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"想哭就哭成一座噴水池",tags:["情緒","哭泣","幽默","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"幼兒性教育啟蒙互動遊戲書",tags:["性教育","身體","互動遊戲書","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"我的行為指導互動遊戲書",tags:["行為指導","常規","互動遊戲書","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"男生女生不一樣",tags:["性別","身體","差異","跨世代經典繪本","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"這樣安全嗎？",tags:["安全教育","危險辨識","跨世代經典繪本","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"今天是什麼日子？",tags:["節日","猜謎","瀨田貞二","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"第一次出門買東西",tags:["獨立","購物","第一次","瀨田貞二","出門買東西","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"小波去上學！",tags:["小波","上學","分離焦慮","SEL","新學期","上學適應","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"小波在哪裡？",tags:["小波","躲貓貓","認知","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"小波會數數",tags:["小波","數數","數字","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","數學"],age:"",note:"",loc:""},
+  {id:cid(),title:"我很忙，我明天再學！",tags:["拖延","學習態度","幽默","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"帶我去嘛！",tags:["邀請","陪伴","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"我相信我自己",tags:["自信","信任自己","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"When I feel SAD（當我感到悲傷時）",tags:["情緒","難過","EQ","小怪獸","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"When I feel SURPRISED（當我感到驚訝時）",tags:["情緒","驚訝","EQ","小怪獸","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"When I feel SCARED（當我感到害怕時）",tags:["情緒","害怕","EQ","小怪獸","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"When I feel LOVED（當我感到被愛時）",tags:["情緒","被愛","EQ","小怪獸","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"When I feel ANGRY（當我感到憤怒時）",tags:["情緒","生氣","EQ","小怪獸","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"認識時間 互動學習書",tags:["時間","互動學習","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","數學"],age:"",note:"",loc:""},
+  {id:cid(),title:"逛商店街",tags:["商店","社區","職業","出門買東西","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"妒婦說，哭不能解決問題",tags:["情緒","哭泣","毛毛兔","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"走開！我在生氣",tags:["情緒","生氣","毛毛兔","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"最棒的禮物",tags:["禮物","分享","SEL","輪流","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"魔法抱抱：情緒管理",tags:["情緒管理","擁抱","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"我會飛：自我認同",tags:["自我認同","飛行","夢想","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"毛毛兔不怕孤獨",tags:["孤獨","毛毛兔","情緒","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"毛毛兔不怕害怕",tags:["害怕","毛毛兔","情緒","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"我的第一個小豬撲滿",tags:["金錢觀","存錢","撲滿","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","數學"],age:"",note:"",loc:""},
+  {id:cid(),title:"告訴我，你怎麼了？",tags:["情緒教育","溝通","幫助孩子處理情緒問題","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"魔法親親",tags:["分離焦慮","親子","上學","SEL","新學期","上學適應","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"爺爺的大噴嚏",tags:["打噴嚏","爺爺","幽默","日文繪本","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"愛哭公主",tags:["情緒","哭泣","公主","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"影子陪我一整天",tags:["影子","陪伴","認知","SEL","科學","光影","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"The Bad Seed",tags:["種子","行為改變","英文繪本","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"大吼大叫的獅子國王",tags:["生氣","國王","情緒管理","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"劍獅出巡",tags:["台灣民俗","劍獅","文化","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"Beautiful Oops! 美麗的錯誤",tags:["犯錯","創意","成長心態","需大人陪","家裡","10分鐘","30分鐘+","睡前","美勞玩法","看故事"],cats:["繪本","美勞"],age:"",note:"",loc:""},
+  {id:cid(),title:"怎麼辦？怎麼辦？掉進洞裡啦！",tags:["解決問題","洞","幽默","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"古利和古拉",tags:["老鼠","料理","友誼","經典繪本","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"別傷心，我會陪著你",tags:["陪伴","安慰","情緒","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"100層樓的家",tags:["數數","想像力","樓層","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","數學"],age:"",note:"",loc:""},
+  {id:cid(),title:"毛毛兔不會嫉妒",tags:["嫉妒","毛毛兔","情緒","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"彩色怪獸",tags:["情緒","顏色","怪獸","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"公車小巴想回家",tags:["公車","交通工具","回家","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"這不是我的帽子",tags:["幽默","帽子","因果","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"小朋友巧連智（訂閱雜誌）",tags:["巧連智","雜誌","訂閱教材","幼幼版","快樂版","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"2021-2023累積多期",loc:""},
+  {id:cid(),title:"新傳說十二生肖 立體書",tags:["十二生肖","立體書","傳統文化","節慶","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"團圓賀新年 3D立體書",tags:["新年","立體書","團圓","傳統節慶","節慶","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"De nacht voor Kerstmis",tags:["聖誕節","荷蘭文","睡前故事","節慶","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"I Love Kerstmis Kleuren（著色本）",tags:["聖誕節","著色","荷蘭文","節慶","需大人陪","家裡","10分鐘","30分鐘+","睡前","美勞玩法","看故事"],cats:["繪本","美勞"],age:"",note:"",loc:""},
+  {id:cid(),title:"How to Help a Friend",tags:["友誼","善良","幫助","Axel Scheffler","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"A Book About Kindness",tags:["善良","品格","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Disney Pixar 迷你板書（Cars/Toy Story/Up/Monsters Inc/The Incredibles）",tags:["迪士尼","皮克斯","英文繪本","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"5本一組",loc:""},
+  {id:cid(),title:"Lift the Flap: Where does Poo Go?",tags:["身體","翻翻書","幽默","科學","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Maisy's First Chinese New Year",tags:["新年","Maisy","生肖","英文繪本","節慶","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"THE DINOOPS Character Book（全7冊）",tags:["Dinoops","角色故事","品格教育","英文繪本","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"Wooba in love/Speedy ate it/Cheesecoo's funny delivery/Don't say no Tanko/Get up Traral/Bororo is happy/A balanced diet for Mooba",loc:""},
+  {id:cid(),title:"THE DINOOPS Toy Book（全4冊）",tags:["Dinoops","生活自理","英文繪本","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"Hello/Where's Traral/Peekaboo/Wash your body squeaky clean",loc:""},
+  {id:cid(),title:"THE DINOOPS Basic Book（全6冊）",tags:["Dinoops","生活自理","英文繪本","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"Where are my friends/Ting-a-ling/Tanko lost the sunglasses/Hide-and-seek/Where to go to bed",loc:""},
+  {id:cid(),title:"THE DINOOPS 親子指導手冊＋單字圖典＋Flap-up Book",tags:["Dinoops","單字卡","家長手冊","圖卡","5分鐘","一起玩"],cats:["英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"The Human Body（SASSI拼圖套書）",tags:["身體","拼圖","英文","點讀","科學","20分鐘","拼圖玩法","家裡","一起玩"],cats:["玩具","英文","數學"],age:"",note:"",loc:""},
+  {id:cid(),title:"Oh! The Animals",tags:["動物","洞洞書","英文","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Flip Flap Shapes",tags:["形狀","翻翻書","英文","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文","數學"],age:"",note:"",loc:""},
+  {id:cid(),title:"Phonics Cards",tags:["自然發音","單字卡","英文","5分鐘","一起玩"],cats:["英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"公車小巴系列",tags:["公車","交通工具","坐車","長途移動","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"Playdoh 黏土組",tags:["黏土","感官","創作","下雨天","需大人陪","家裡","30分鐘+","美勞玩法"],cats:["玩具","美勞"],age:"",note:"",loc:""},
+  {id:cid(),title:"拼圖 Puzzle",tags:["拼圖","邏輯","下雨天","自主遊戲","20分鐘","拼圖玩法","家裡","自己玩"],cats:["玩具","數學"],age:"",note:"",loc:""},
+  {id:cid(),title:"Slot Car 軌道車",tags:["賽車","軌道","操作","20分鐘","家裡","一起玩"],cats:["玩具"],age:"",note:"",loc:""},
+  {id:cid(),title:"Magnetic Tiles 磁力片",tags:["磁力片","建構","空間","下雨天","20分鐘","家裡","一起玩"],cats:["玩具"],age:"",note:"",loc:""},
+  {id:cid(),title:"Lego 樂高",tags:["樂高","建構","創造力","下雨天","20分鐘","家裡","一起玩"],cats:["玩具"],age:"",note:"",loc:""},
+  {id:cid(),title:"美勞用品組（蠟筆/水彩/馬克筆）",tags:["美勞","蠟筆","水彩","馬克筆","下雨天","美勞玩法","30分鐘+","需大人陪","家裡"],cats:["美勞"],age:"",note:"",loc:""},
+  {id:cid(),title:"Disney English Reading Club - Frozen II Special Edition",tags:["迪士尼","冰雪奇緣","英文閱讀","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Disney English Reading Club - Zootopia",tags:["迪士尼","動物方城市","英文閱讀","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Disney English Reading Club - Finding Dory",tags:["迪士尼","海洋","英文閱讀","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Disney English Reading Club - The Good Dinosaur",tags:["迪士尼","恐龍","英文閱讀","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Today I Will Fly! (Elephant & Piggie)",tags:["自信","嘗試新事物","夢想","Elephant & Piggie","Mo Willems","英文繪本","重複句型","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列，句型重複、適合手指認讀",loc:""},
+  {id:cid(),title:"My Friend Is Sad (Elephant & Piggie)",tags:["情緒","安慰朋友","同理心","Elephant & Piggie","Mo Willems","英文繪本","重複句型","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"I Am Invited to a Party! (Elephant & Piggie)",tags:["派對","緊張","社交","Elephant & Piggie","Mo Willems","英文繪本","重複句型","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"I Love My New Toy! (Elephant & Piggie)",tags:["分享","新玩具","生氣","Elephant & Piggie","Mo Willems","英文繪本","重複句型","SEL","輪流","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"Watch Me Throw the Ball! (Elephant & Piggie)",tags:["運動","練習","挫折","Elephant & Piggie","Mo Willems","英文繪本","重複句型","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"Are You Ready to Play Outside? (Elephant & Piggie)",tags:["天氣","準備","戶外","Elephant & Piggie","Mo Willems","英文繪本","重複句型","野餐","出遊","天氣預報","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文","戶外"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"There Is a Bird on Your Head! (Elephant & Piggie)",tags:["幽默","友誼","耐心","鳥","Elephant & Piggie","Mo Willems","英文繪本","重複句型","SEL","等待","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"I Will Surprise My Friend! (Elephant & Piggie)",tags:["驚喜","友誼","誤會","Elephant & Piggie","Mo Willems","英文繪本","重複句型","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"I Broke My Trunk! (Elephant & Piggie)",tags:["誠實","意外","敘事","大象","Elephant & Piggie","Mo Willems","英文繪本","重複句型","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"Let's Go for a Drive! (Elephant & Piggie)",tags:["想像力","計畫","冒險","交通工具","Elephant & Piggie","Mo Willems","英文繪本","重複句型","坐車","長途移動","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"Can I Play Too? (Elephant & Piggie)",tags:["包容","友誼","差異","Elephant & Piggie","Mo Willems","英文繪本","重複句型","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"We Are in a Book! (Elephant & Piggie)",tags:["後設","閱讀","幽默","Elephant & Piggie","Mo Willems","英文繪本","重複句型","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"Elephants Cannot Dance! (Elephant & Piggie)",tags:["自我懷疑","嘗試","自信","跳舞","Elephant & Piggie","Mo Willems","英文繪本","重複句型","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"Pigs Make Me Sneeze! (Elephant & Piggie)",tags:["過敏","友誼","擔心","Elephant & Piggie","Mo Willems","英文繪本","重複句型","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"I'm a Frog! (Elephant & Piggie)",tags:["假裝遊戲","想像力","身份","青蛙","Elephant & Piggie","Mo Willems","英文繪本","重複句型","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"Should I Share My Ice Cream? (Elephant & Piggie)",tags:["分享","猶豫","決定","冰淇淋","Elephant & Piggie","Mo Willems","英文繪本","重複句型","SEL","輪流","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"3-6歲",note:"Elephant & Piggie 系列",loc:""},
+  {id:cid(),title:"The Sour Grape (Food Group)",tags:["原諒","記仇","Jory John","Food Group","英文繪本","品格教育","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"4-8歲",note:"Food Group 品格教育系列",loc:""},
+  {id:cid(),title:"The Smart Cookie (Food Group)",tags:["自我價值","比較","Jory John","Food Group","英文繪本","品格教育","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"4-8歲",note:"Food Group 品格教育系列",loc:""},
+  {id:cid(),title:"The Couch Potato (Food Group)",tags:["3C使用","懶惰","活動","Jory John","Food Group","英文繪本","品格教育","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"4-8歲",note:"Food Group 品格教育系列",loc:""},
+  {id:cid(),title:"The Big Cheese (Food Group)",tags:["謙虛","好勝","Jory John","Food Group","英文繪本","品格教育","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"4-8歲",note:"Food Group 品格教育系列",loc:""},
+  {id:cid(),title:"The Humble Pie (Food Group)",tags:["謙虛","炫耀","真誠","Jory John","Food Group","英文繪本","品格教育","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"4-8歲",note:"Food Group 品格教育系列",loc:""},
+  {id:cid(),title:"The Good Egg (Food Group)",tags:["完美主義","照顧自己","Jory John","Food Group","英文繪本","品格教育","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"4-8歲",note:"Food Group 品格教育系列",loc:""},
+  {id:cid(),title:"The Cool Bean (Food Group)",tags:["融入","自我接納","Jory John","Food Group","英文繪本","品格教育","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"4-8歲",note:"Food Group 品格教育系列",loc:""},
+  {id:cid(),title:"Where does water come from? (Usborne)",tags:["水","水循環","翻翻書","Usborne","英文繪本","科學","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"What is sleep? (Usborne)",tags:["睡眠","翻翻書","Usborne","英文繪本","睡前儀式","睡眠準備","科學","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"What are stars? (Usborne)",tags:["星星","太空","翻翻書","Usborne","英文繪本","科學","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Why am I afraid? (Usborne)",tags:["害怕","情緒","翻翻書","Usborne","英文繪本","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Why do I need to wash? (Usborne)",tags:["衛生","洗澡","翻翻書","Usborne","英文繪本","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Peppa Loves Hugs! (Peppa Pig)",tags:["佩佩豬","擁抱","英文繪本","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Maisy's Wonderful Weather Book",tags:["天氣","Maisy","翻翻書","英文繪本","野餐","出遊","天氣預報","下雨天","科學","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Once Upon a Raindrop",tags:["水循環","雨滴","詩意","James Carter","英文繪本","野餐","出遊","天氣預報","下雨天","科學","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Colours of the World",tags:["顏色","世界文化","英文繪本","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Gnome Sweet Gnome (Smart Games)",tags:["邏輯","空間","疊疊樂","Smart Games","下雨天","自主遊戲","20分鐘","家裡","桌遊玩法","自己玩"],cats:["桌遊"],age:"",note:"",loc:""},
+  {id:cid(),title:"Noah's Ark (Smart Games)",tags:["邏輯","動物","方舟","Smart Games","自主遊戲","20分鐘","家裡","桌遊玩法","自己玩"],cats:["桌遊"],age:"",note:"",loc:""},
+  {id:cid(),title:"Dress Code (Smart Games)",tags:["邏輯","穿搭","服裝","Smart Games","自主遊戲","20分鐘","家裡","桌遊玩法","自己玩"],cats:["桌遊"],age:"",note:"",loc:""},
+  {id:cid(),title:"Trucky 3 (Smart Games)",tags:["邏輯","卡車","形狀","裝載","Smart Games","自主遊戲","20分鐘","家裡","桌遊玩法","自己玩"],cats:["桌遊"],age:"",note:"",loc:""},
+  {id:cid(),title:"注音符號繪本書單（收藏待啟動）",tags:["注音","ㄅㄆㄇ","書單","收藏","待啟動","大班"],cats:["繪本"],age:"5-6歲",note:"家長分享的注音啟蒙書單：一符號一繪本，附小康軒替換對照（多可從康軒訂閱贈書取得）。替換書例：ㄅ我的神祕保母/ㄆ莫莫交朋友/ㄈ小飛龍來我家/ㄉ對你說謝謝/ㄊ我們救了一頭大睡鯨/ㄐ神祕到骨頭照相機/ㄓ尋找朱鷺五百里/ㄘ對你說一百次謝謝/ㄙ自私浣熊的洗洗店/一貓咪家的失望大餐/ㄨ露露好害怕/ㄚ最勇敢的大牙/ㄛ多多的不害羞練習/ㄜ為你做一件泳衣/ㄝ小飛龍當姐姐/ㄣ老虎的守護神/ㄤ小飛龍去上學/ㄦ聲音王國的挑戰。啟動時機：CVC五短母音穩定後（約3-4個月後）再評估",loc:"收藏"},
+  {id:cid(),title:"CVC 母音主打書對照表",tags:["母音","CVC","自然拼音","phonics","主打書","對照表","5分鐘"],cats:["英文"],age:"4-6歲",note:"每個短母音一本主打書＋錨字，兩週一個母音：第1-2週短a＝Kitticorn（cat/hat/map/sat/bag）、第3-4週短e＝SWR#19 My Pet（pet/red/bed/leg/net）、第5-6週短i＝Elephant & Piggie（pig/big/sit/lid/fin）、第7-8週短o＝Sparkyfox（fox/dog/hot/pot/log）、第9-10週短u＝SWR#5 What Has Stripes?（bug/sun/run）。玩法：主打書當回訪書，唸到錨字停下讓她拼。卡住就停留，主題照常往前",loc:""},
+  {id:cid(),title:"Mideer 思維機",tags:["邏輯","思維訓練","Mideer","自主遊戲","操作教具","20分鐘","家裡","自己玩"],cats:["玩具","數學"],age:"",note:"單人自主操作，不需陪玩，適合留白時段自己玩",loc:""},
+  {id:cid(),title:"ZOOM ZOOM ZOOM PHONICS CVC自然拼音火箭 (KidsRead)",tags:["自然拼音","CVC","火箭","KidsRead","點讀","英文","5分鐘","家裡","一起玩"],cats:["英文","玩具"],age:"",note:"KidsRead 點讀教具，網袋收納標示「自然拼音火箭」",loc:""},
+  {id:cid(),title:"Monkey Ark 木製拼圖遊戲",tags:["猴子","木製拼圖","邏輯","平衡","20分鐘","拼圖玩法","家裡","一起玩"],cats:["玩具","數學"],age:"",note:"",loc:""},
+  {id:cid(),title:"Stir & Sort Food Game",tags:["食物","分類","顏色","桌遊","轉盤","野餐","準備食物","20分鐘","家裡","一起玩","桌遊玩法"],cats:["桌遊","玩具"],age:"",note:"",loc:""},
+  {id:cid(),title:"Murphy Café 玩具餐廚組",tags:["扮家家酒","食物","餐廳","角色扮演","野餐","準備食物","20分鐘","一起玩","扮演","家裡"],cats:["玩具"],age:"",note:"",loc:""},
+  {id:cid(),title:"SUZON doesn't want to go to school",tags:["上學焦慮","學校","適應","My Small Heroes","英文繪本","SEL","新學期","上學適應","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Mix It Up! (Hervé Tullet)",tags:["顏色","互動繪本","混色","藝術","英文繪本","需大人陪","家裡","10分鐘","30分鐘+","睡前","美勞玩法","看故事"],cats:["繪本","英文","美勞"],age:"",note:"",loc:""},
+  {id:cid(),title:"JY Sight Word Readers 常見字讀本套組 (KidsRead)",tags:["Sight Word","常見字","英文閱讀","KidsRead","點讀","JY Books","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"全套48冊點讀版，各冊已個別建檔",loc:""},
+  {id:cid(),title:"Sight Word Readers 01: I Am Active",tags:["運動","活動","Sight Word","KidsRead","點讀","英文閱讀","科學","Science","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第1冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 02: At Grandma's House",tags:["祖母","家人","拜訪","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第2冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 03: Count on Me",tags:["數數","手指","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第3冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 04: I Like the Spring!",tags:["春天","季節","觀察","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第4冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 05: What Has Stripes?",tags:["條紋","圖案","昆蟲","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第5冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 06: We Like Birthdays",tags:["生日","派對","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第6冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 07: We Have Fruit",tags:["水果","食物","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第7冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 08: My Home",tags:["家","房子","世界文化","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第8冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 09: Animal Babies",tags:["動物","動物寶寶","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第9冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 10: Animals on the Farm",tags:["動物","農場","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第10冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 11: Count Around the Room",tags:["數數","房間","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第11冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 12: Jobs Around Town",tags:["職業","社區","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第12冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 13: In the Band",tags:["音樂","樂團","樂器","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第13冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 14: Look at the Shapes",tags:["形狀","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第14冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 15: I Go!",tags:["交通工具","賽車","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第15冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 16: At My School",tags:["學校","上學適應","新學期","Sight Word","KidsRead","點讀","英文閱讀","社會","Social Studies","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第16冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 17: Big Pet, Little Pet",tags:["寵物","大小","比較","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第17冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 18: At the Shore",tags:["海邊","海洋","螃蟹","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第18冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 19: My Pet",tags:["寵物","狗","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第19冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 20: Look at the Coins",tags:["錢幣","金錢觀","數學","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第20冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 21: What Goes Up?",tags:["上下","熱氣球","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第21冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 22: On My Desk",tags:["書桌","文具","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第22冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 23: My Town",tags:["城鎮","社區","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第23冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 24: Look at the Weather",tags:["天氣","天氣預報","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第24冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 25: Dad Likes New Clothes",tags:["衣服","爸爸","購物","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第25冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 26: Look and See",tags:["觀察","望遠鏡","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第26冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 27: Count at the Baseball Field",tags:["棒球","數數","運動","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第27冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 28: My Family",tags:["家庭","家人","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第28冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 29: Finding Shapes With Dad",tags:["形狀","爸爸","城市","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第29冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 30: Look at the Sky",tags:["天空","星星","天文","科學","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第30冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 31: I Like to Play Sports",tags:["運動","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第31冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 32: Playtime at Home",tags:["遊戲","桌遊","在家","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第32冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 33: We Like Vegetables",tags:["蔬菜","食物","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第33冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 34: Our Tag Sale",tags:["二手拍賣","買賣","金錢觀","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第34冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 35: They Grow Plants",tags:["植物","種植","科學","生長","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第35冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 36: We Go to School",tags:["上學","學校","校車","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第36冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 37: See the Birds",tags:["鳥","動物","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第37冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 38: In Our Town",tags:["城鎮","社區","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第38冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 39: What Is the Time?",tags:["時間","時鐘","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第39冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 40: When I Grow Up",tags:["長大","職業","夢想","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第40冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 41: Finding Stripes",tags:["條紋","海星","圖案","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第41冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 42: Going Up and Down",tags:["上下","摩天輪","相反詞","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第42冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 43: In the Water",tags:["水","游泳","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第43冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 44: Counting With Mom",tags:["數數","媽媽","花","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第44冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 45: My Favorite Places",tags:["地方","喜好","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第45冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 46: Snack Time",tags:["點心","食物","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第46冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 47: With My Friends",tags:["朋友","友誼","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第47冊",loc:""},
+  {id:cid(),title:"Sight Word Readers 48: Time to Eat!",tags:["吃飯","動物","長頸鹿","Sight Word","KidsRead","點讀","英文閱讀","5分鐘","家裡","一起玩","睡前","車上","看故事"],cats:["繪本","英文"],age:"",note:"JY Sight Word Readers 第48冊",loc:""},
+  {id:cid(),title:"The Pout-Pout Fish",tags:["情緒","魚","悲觀轉樂觀","英文繪本","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"What are germs? (Lift the flap)",tags:["細菌","衛生","翻翻書","英文繪本","科學","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Why do I (sometimes) feel angry? (Lift the flap)",tags:["生氣","情緒","翻翻書","英文繪本","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Brown Bear, Brown Bear, What Do You See? (Eric Carle)",tags:["動物","顏色","重複句型","Eric Carle","英文繪本","點讀","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"The Very Hungry Caterpillar (Eric Carle)",tags:["毛毛蟲","數數","食物","Eric Carle","英文繪本","點讀","科學","生命週期","蝴蝶","昆蟲","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文","數學"],age:"",note:"",loc:""},
+  {id:cid(),title:"Go Away, Mr Wolf!",tags:["三隻小豬","狼","翻翻書","英文繪本","點讀","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"I'm the Best (Lucy Cousins)",tags:["驕傲","友誼","動物","英文繪本","SEL","點讀","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Today Is Monday (Eric Carle)",tags:["星期","食物","累積故事","Eric Carle","英文繪本","點讀","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"我爸爸超厲害!",tags:["爸爸","親情","幽默","想像力","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"佳佳的妹妹不見了",tags:["手足","走失","家庭","情緒","SEL","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"KidiDoc 下面有什麼?",tags:["互動知識書","翻翻操作","KidiDoc","科學","地底","探索","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"科學知識翻翻書",loc:""},
+  {id:cid(),title:"KidiDoc 動物大解密",tags:["互動知識書","翻翻操作","KidiDoc","科學","動物","生活認知","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"科學知識翻翻書",loc:""},
+  {id:cid(),title:"KidiDoc 100個為什麼?",tags:["互動知識書","翻翻操作","KidiDoc","科學","為什麼","好奇心","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"科學知識翻翻書",loc:""},
+  {id:cid(),title:"勺攵口商店街（骰特篇／介韻符篇）",tags:["注音符號","商店街","語文","拼音","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本"],age:"",note:"",loc:""},
+  {id:cid(),title:"Math Machine: Treasure Quest",tags:["數學","尋寶","邏輯","英文繪本","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文","數學"],age:"",note:"",loc:""},
+  {id:cid(),title:"Flip Flap Colors",tags:["顏色","翻翻書","英文繪本","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Magic Folding Flaps: World",tags:["世界","地理","翻翻書","英文繪本","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Magic Folding Flaps: Animals",tags:["動物","翻翻書","英文繪本","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Magic Folding Flaps: My Body",tags:["身體","翻翻書","英文繪本","科學","家裡","一起玩","10分鐘","睡前","看故事"],cats:["繪本","英文"],age:"",note:"",loc:""},
+  {id:cid(),title:"Doctor's Set（互動知識書＋道具）",tags:["醫生","職業扮演","英文","互動知識書","家裡","一起玩","10分鐘","扮演","睡前","看故事"],cats:["繪本","英文","玩具"],age:"",note:"",loc:""},
+  {id:cid(),title:"Let's Cook!（互動知識書＋道具）",tags:["烹飪","廚房","職業扮演","英文","互動知識書","野餐","準備食物","家裡","一起玩","10分鐘","扮演","睡前","看故事"],cats:["繪本","英文","玩具"],age:"",note:"",loc:""},
+];
+
+let materials = [];
+let editingChips = {cats:new Set()};
+let interests = [];
+const STORE_KEY_INTERESTS = "interests_v1";
+
+async function loadInterests(){
+  try{
+    const res = await window.storage.get(STORE_KEY_INTERESTS, false);
+    interests = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){ interests = []; }
+}
+async function saveInterests(){
+  try{ await window.storage.set(STORE_KEY_INTERESTS, JSON.stringify(interests), false); }
+  catch(e){ showToast("儲存失敗"); }
+}
+function interestScore(m){
+  if(interests.length===0) return 0;
+  const hay = (m.title+' '+m.tags.join(' ')).toLowerCase();
+  return interests.reduce((s,it)=> s + (hay.includes(it.toLowerCase())?1:0), 0);
+}
+function editInterests(){
+  document.getElementById('f_interests').value = interests.join(', ');
+  document.getElementById('interestBg').classList.add('open');
+  setTimeout(()=>document.getElementById('f_interests').focus(), 100);
+}
+async function saveInterestsFromModal(){
+  const input = document.getElementById('f_interests').value;
+  interests = input.split(/[,，、]/).map(s=>s.trim()).filter(Boolean).slice(0,6);
+  await saveInterests();
+  document.getElementById('interestBg').classList.remove('open');
+  renderLanding();
+  showToast('已更新最近迷');
+}
+
+async function loadData(){
+  try{
+    const res = await window.storage.get(STORE_KEY_MATERIALS, false);
+    if(res && res.value){
+      materials = JSON.parse(res.value);
+      // Merge in any new default entries that aren't already present (by title),
+      // so future updates to the tool's built-in list reach devices that already
+      // have saved data, without touching anything the person added themselves.
+      const existingTitles = new Set(materials.map(m=>m.title));
+      let mergedAny = false;
+      seed.forEach(s=>{
+        if(!existingTitles.has(s.title)){
+          materials.push(s);
+          mergedAny = true;
+        }
+      });
+      if(mergedAny){ await saveMaterials(); }
+    } else {
+      materials = seed;
+      await saveMaterials();
+    }
+  }catch(e){ materials = seed; try{await saveMaterials();}catch(e2){} }
+  renderLanding();
+}
+async function saveMaterials(){
+  try{ await window.storage.set(STORE_KEY_MATERIALS, JSON.stringify(materials), false); }
+  catch(e){ showToast("儲存失敗，請再試一次"); }
+}
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+function renderLanding(){
+  const intHtml = interests.length
+    ? interests.map(i=>`<span style="background:var(--sage-soft);color:var(--sage);padding:3px 10px;border-radius:999px;font-size:12px;">⭐ ${escapeHtml(i)}</span>`).join(' ')
+    : '<span style="color:var(--ink-soft);font-size:12px;">還沒設定</span>';
+  document.getElementById('results').innerHTML = `
+    <div class="landing">
+      <div class="big">🔎</div>
+      <p>打主題（狗、天氣）、情境（野餐、下雨天、生病）、玩法（桌遊、扮演）、時間（5分鐘、10分鐘）、大人程度（自己玩、一起玩）或地點（車上、睡前）。</p>
+      <div style="margin-top:22px;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:8px;">福福最近迷</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;">
+          ${intHtml}
+          <button onclick="editInterests()" style="border:1px solid var(--line);background:#fff;color:var(--ink-soft);padding:3px 10px;border-radius:999px;font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">✎ 編輯</button>
+        </div>
+        <div style="font-size:10.5px;color:var(--ink-soft);margin-top:6px;">符合這些的教材會自動排在搜尋結果最前面</div>
+      </div>
+    </div>`;
+}
+
+// 中英雙向同義詞：搜任一語言都會同時比對另一語言
+const SYNONYMS = [
+  ["科學","science"],["動物","animal","animals"],["顏色","color","colours","colors","colour"],
+  ["天氣","weather"],["情緒","emotion","emotions","feelings"],["數學","math","maths"],
+  ["身體","body","human body"],["星星","star","stars"],["太空","space"],
+  ["恐龍","dinosaur","dinosaurs"],["食物","food"],["水","water"],["雨","rain"],
+  ["蝴蝶","butterfly"],["毛毛蟲","caterpillar"],["生命週期","life cycle"],
+  ["熊","bear"],["狗","dog","puppy"],["貓","cat"],["魚","fish"],["鳥","bird"],
+  ["企鵝","penguin"],["兔","rabbit","bunny"],["大象","elephant"],["豬","pig"],
+  ["狐狸","fox"],["熊貓","panda"],["獅子","lion"],["狼","wolf"],["青蛙","frog"],
+  ["羊","sheep"],["猴子","monkey"],["昆蟲","insect","bug","bugs"],
+  ["朋友","friend","friendship","友誼"],["分享","share","sharing"],
+  ["勇氣","brave","courage"],["害怕","scared","fear","afraid"],
+  ["生氣","angry","anger"],["難過","sad","悲傷"],["開心","happy","快樂"],
+  ["愛","love"],["家庭","family","家人"],["學校","school"],["上學","school"],
+  ["睡覺","sleep","睡眠"],["音樂","music"],["藝術","art","美勞"],
+  ["形狀","shape","shapes"],["數字","number","numbers"],["時間","time","clock"],
+  ["聖誕","christmas"],["新年","new year"],["生日","birthday"],
+  ["醫生","doctor"],["醫院","hospital"],["細菌","germ","germs"],
+  ["野餐","picnic"],["露營","camping"],["公園","park"],["海洋","ocean","sea"],
+  ["交通工具","vehicle","transportation"],["公車","bus"],["車","car"],
+  ["火箭","rocket"],["點讀","kidsread"],["拼音","phonics"],
+  ["邏輯","logic"],["拼圖","puzzle"],["樂高","lego"],["磁力片","magnetic tiles"],
+  ["翻翻書","lift the flap","flip flap"],["立體書","pop-up"],
+  ["自己玩","independent play","solo"],["一起玩","together"],
+  ["桌遊玩法","board game","桌遊"],["扮演","pretend play","role play"],
+  ["感官","sensory"],["睡前","bedtime"],["車上","in the car"],
+  ["5分鐘","五分鐘","5 分鐘","five minutes","5 min","5min"],
+  ["10分鐘","十分鐘","10 分鐘","ten minutes","10 min","10min"],
+  ["20分鐘","二十分鐘","20 分鐘","twenty minutes","20 min","20min"],
+  ["30分鐘+","三十分鐘","30分鐘","30 分鐘","thirty minutes","30 min","30min"],
+];
+function expandQuery(q){
+  const terms = new Set([q]);
+  SYNONYMS.forEach(group=>{
+    if(group.some(w=>w.toLowerCase().includes(q) || q.includes(w.toLowerCase()))){
+      group.forEach(w=>terms.add(w.toLowerCase()));
+    }
+  });
+  return [...terms];
+}
+
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', ()=>{
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(()=>{
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    if(!q){ renderLanding(); return; }
+    const terms = expandQuery(q);
+    const matched = materials.filter(m=>{
+      const hay = (m.title+' '+m.tags.join(' ')+' '+(m.note||'')+' '+m.cats.join(' ')).toLowerCase();
+      return terms.some(t=>hay.includes(t));
+    });
+    matched.sort((a,b)=>interestScore(b)-interestScore(a));
+    showResults(matched);
+  },150);
+});
+
+function showResults(list){
+  const box = document.getElementById('results');
+  if(list.length===0){
+    box.innerHTML = `<div class="no-results">目前沒有相關教材 — 這也是提醒妳可以補的訊號</div>`;
+    return;
+  }
+  box.innerHTML = list.map(m=>{
+    const catBadges = m.cats.map(c=>{
+      const def = CATS.find(x=>x.key===c);
+      return `<span class="badge">${def?def.emoji:''} ${c}</span>`;
+    }).join('');
+    const tagPills = m.tags.map(t=>`<span class="tag-pill">${escapeHtml(t)}</span>`).join('');
+    return `<div class="sr-item">
+      <div class="sr-title">${escapeHtml(m.title)}</div>
+      <div class="sr-badges">${catBadges}</div>
+      <div class="sr-tags">${tagPills}</div>
+      ${m.note?`<div class="sr-note">${escapeHtml(m.note)}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function buildChips(containerId, options, selectedSet, labelFn){
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  options.forEach(opt=>{
+    const key = typeof opt === 'string' ? opt : opt.key;
+    const chip = document.createElement('div');
+    chip.className = 'chip'+(selectedSet.has(key)?' on':'');
+    chip.textContent = labelFn ? labelFn(opt) : key;
+    chip.onclick = ()=>{
+      if(selectedSet.has(key)) selectedSet.delete(key); else selectedSet.add(key);
+      chip.classList.toggle('on');
+    };
+    c.appendChild(chip);
+  });
+}
+function openAddModal(existing){
+  editingChips = { cats:new Set(existing?existing.cats:[]) };
+  document.getElementById('modalTitle').textContent = existing?'編輯教材':'新增教材';
+  document.getElementById('editId').value = existing?existing.id:'';
+  document.getElementById('f_title').value = existing?existing.title:'';
+  document.getElementById('f_tags').value = existing?existing.tags.join(', '):'';
+  document.getElementById('f_age').value = existing?existing.age:'';
+  document.getElementById('f_note').value = existing?existing.note:'';
+  document.getElementById('f_loc').value = existing?existing.loc:'';
+  buildChips('catChips', CATS, editingChips.cats, c=>c.emoji+' '+c.key);
+  document.getElementById('modalBg').classList.add('open');
+}
+document.getElementById('addBtn').onclick = ()=>openAddModal(null);
+document.getElementById('cancelBtn').onclick = ()=>document.getElementById('modalBg').classList.remove('open');
+document.getElementById('saveBtn').onclick = async ()=>{
+  const title = document.getElementById('f_title').value.trim();
+  if(!title){ showToast('請填品項名稱'); return; }
+  const tags = document.getElementById('f_tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const id = document.getElementById('editId').value;
+  const data = {
+    id: id||cid(), title, tags,
+    cats:[...editingChips.cats],
+    age: document.getElementById('f_age').value.trim(),
+    note: document.getElementById('f_note').value.trim(),
+    loc: document.getElementById('f_loc').value.trim(),
+  };
+  if(id){ materials = materials.map(m=>m.id===id?data:m); } else { materials.push(data); }
+  await saveMaterials();
+  document.getElementById('modalBg').classList.remove('open');
+  showToast('已儲存');
+  if(document.getElementById('searchInput').value.trim()){
+    document.getElementById('searchInput').dispatchEvent(new Event('input'));
+  }
+};
+
+document.getElementById('manageBtn').onclick = ()=>{ renderManageList(); document.getElementById('manageBg').classList.add('open'); };
+document.getElementById('closeManage').onclick = ()=>document.getElementById('manageBg').classList.remove('open');
+function renderManageList(){
+  const list = document.getElementById('manageList');
+  if(materials.length===0){ list.innerHTML='<div class="no-results">還沒有教材</div>'; return; }
+  list.innerHTML='';
+  materials.forEach(m=>{
+    const row=document.createElement('div'); row.className='manage-item';
+    row.innerHTML=`<div><div class="mi-title">${escapeHtml(m.title)}</div><div class="mi-sub">${m.cats.join('、')} · ${m.tags.join(', ')}</div></div>
+      <div style="display:flex;gap:6px;"><button data-act="edit">編輯</button><button data-act="del">刪除</button></div>`;
+    row.querySelector('[data-act="edit"]').onclick = ()=>{ document.getElementById('manageBg').classList.remove('open'); openAddModal(m); };
+    row.querySelector('[data-act="del"]').onclick = async ()=>{
+      if(!confirm(`確定要刪除「${m.title}」嗎？`)) return;
+      materials = materials.filter(x=>x.id!==m.id);
+      await saveMaterials(); renderManageList();
+      showToast('已刪除');
+    };
+    list.appendChild(row);
+  });
+}
+
+loadInterests().then(loadData);
+</script>
+</body>
+</html>
